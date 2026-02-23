@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agri AI - Smart Farming & Marketplace</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --green-50: #f0fdf4; --green-100: #dcfce7; --green-600: #16a34a; --green-700: #15803d; --amber-500: #f59e0b; --earth-800: #292524; }
+    body { font-family: 'DM Sans', sans-serif; margin: 0; min-height: 100vh; position: relative; overflow-x: hidden; }
+    h1, h2, h3 { font-family: 'Outfit', sans-serif; }
+    .img-placeholder { background: linear-gradient(135deg, #d4e8d9 0%, #a7d9b0 100%); }
+    [data-i18n] { transition: opacity 0.2s; }
+
+    /* Aesthetic background - default (role selection) */
+    .page-bg {
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      background: linear-gradient(135deg, #1a472a 0%, #2d5a3d 50%, #1e3d2a 100%);
+      background-image: url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1920'), linear-gradient(135deg, #1a472a 0%, #2d5a3d 50%, #1e3d2a 100%);
+      background-size: cover, auto;
+      background-position: center, 0 0;
+      background-repeat: no-repeat, no-repeat;
+      transition: background-image 0.5s ease;
+    }
+    /* Farmer dashboard - farming / fields */
+    body.bg-role-farmer .page-bg {
+      background-image: url('https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=1920'), linear-gradient(135deg, rgba(20,83,45,0.9) 0%, rgba(30,64,46,0.88) 100%);
+    }
+    /* Seller dashboard - market / warehouse */
+    body.bg-role-seller .page-bg {
+      background-image: url('https://images.unsplash.com/photo-1553413077-190dd305871c?w=1920'), linear-gradient(135deg, rgba(120,53,15,0.88) 0%, rgba(68,36,15,0.9) 100%);
+    }
+    /* Buyer dashboard - buying / delivery */
+    body.bg-role-buyer .page-bg {
+      background-image: url('https://images.unsplash.com/photo-1566576912321-d58ddd7a5938?w=1920'), linear-gradient(135deg, rgba(12,74,110,0.88) 0%, rgba(15,50,80,0.9) 100%);
+    }
+    .page-bg-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background: linear-gradient(135deg, rgba(20,83,45,0.88) 0%, rgba(30,64,46,0.85) 40%, rgba(15,50,30,0.9) 100%);
+      transition: background 0.4s ease;
+    }
+    body.bg-role-farmer .page-bg-overlay { background: linear-gradient(135deg, rgba(20,83,45,0.82) 0%, rgba(15,50,30,0.85) 100%); }
+    body.bg-role-seller .page-bg-overlay { background: linear-gradient(135deg, rgba(120,53,15,0.82) 0%, rgba(68,36,15,0.88) 100%); }
+    body.bg-role-buyer .page-bg-overlay { background: linear-gradient(135deg, rgba(12,74,110,0.82) 0%, rgba(15,50,80,0.88) 100%); }
+
+    /* 3D card container */
+    .role-cards-3d {
+      perspective: 1200px;
+      transform-style: preserve-3d;
+    }
+    .role-card {
+      transform-style: preserve-3d;
+      transform: perspective(800px) rotateY(0deg) rotateX(0deg);
+      transition: transform 0.4s ease, box-shadow 0.4s ease;
+      will-change: transform;
+      backface-visibility: hidden;
+      border: 1px solid rgba(255,255,255,0.2) !important;
+      background: rgba(255,255,255,0.95) !important;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.1) inset;
+    }
+    .role-card:hover {
+      transform: perspective(800px) rotateY(-2deg) rotateX(3deg) translateY(-8px) scale(1.02);
+      box-shadow: 0 25px 50px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.15) inset;
+    }
+    .role-card:active { transform: perspective(800px) rotateY(0) rotateX(0) translateY(-2px) scale(0.99); }
+
+    /* Glass content panel */
+    .glass-panel {
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.3);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    }
+
+    /* AI bot voice bubble */
+    .voice-bot-bubble {
+      background: linear-gradient(145deg, rgba(22,163,74,0.95), rgba(21,128,61,0.95));
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.25);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+      animation: bubble-in 0.5s ease;
+    }
+    @keyframes bubble-in { from { opacity: 0; transform: scale(0.9) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    .mic-pulse { animation: mic-pulse 1.5s ease-in-out infinite; }
+    @keyframes mic-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.1); } }
+
+    /* Chatbot - right bottom */
+    .chatbot-panel {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      z-index: 40;
+      width: 360px;
+      max-width: calc(100vw - 2rem);
+      max-height: 480px;
+      display: flex;
+      flex-direction: column;
+      background: rgba(255,255,255,0.98);
+      backdrop-filter: blur(16px);
+      border-radius: 1rem;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+      border: 1px solid rgba(255,255,255,0.4);
+      overflow: hidden;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+    .chatbot-panel.hidden { transform: translateY(100%); opacity: 0; pointer-events: none; }
+    .chatbot-header {
+      padding: 0.75rem 1rem;
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      color: white;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .chatbot-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      min-height: 200px;
+      max-height: 320px;
+    }
+    .chat-msg { max-width: 85%; padding: 0.5rem 0.75rem; border-radius: 1rem; font-size: 0.875rem; line-height: 1.4; }
+    .chat-msg.bot { align-self: flex-start; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+    .chat-msg.user { align-self: flex-end; background: #16a34a; color: white; }
+    .chatbot-input-wrap { padding: 0.75rem; border-top: 1px solid #e5e7eb; display: flex; gap: 0.5rem; }
+    .chatbot-input-wrap input { flex: 1; padding: 0.5rem 0.75rem; border-radius: 0.75rem; border: 1px solid #d1d5db; font-size: 0.875rem; }
+    .chatbot-toggle {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      z-index: 41;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      color: white;
+      border: none;
+      box-shadow: 0 4px 20px rgba(22,163,74,0.5);
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .chatbot-toggle:hover { transform: scale(1.05); }
+    .chatbot-panel:not(.hidden) ~ .chatbot-toggle { display: none; }
+  </style>
+</head>
+<body id="body-bg" class="text-stone-800 min-h-screen">
+  <div class="page-bg"></div>
+  <div class="page-bg-overlay"></div>
+  <div id="app" class="max-w-6xl mx-auto px-4 py-6 relative z-0">
+    <!-- Role selection screen -->
+    <section id="role-screen" class="text-center py-12 min-h-[80vh] flex flex-col justify-center">
+      <!-- AI Voice bot ask role -->
+      <div id="voice-bot-area" class="mb-8 flex justify-center">
+        <div id="voice-bot-bubble" class="voice-bot-bubble hidden rounded-2xl px-6 py-4 max-w-md text-left text-white shadow-xl">
+          <div class="flex items-start gap-3">
+            <div id="voice-bot-avatar" class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-2xl flex-shrink-0">🤖</div>
+            <div class="flex-1 min-w-0">
+              <p id="voice-bot-text" class="text-sm font-medium leading-relaxed"></p>
+              <div id="voice-bot-listening" class="hidden mt-2 flex items-center gap-2 text-white/90 text-xs">
+                <span class="mic-pulse w-2 h-2 rounded-full bg-white"></span>
+                <span>Listening... Say "Farmer", "Seller", or "Buyer"</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button type="button" id="toggle-voice-bot" class="mb-4 mx-auto flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 hover:bg-white/30 text-white text-sm font-medium backdrop-blur border border-white/30 transition">
+        <span id="voice-bot-btn-icon">🎤</span>
+        <span id="voice-bot-btn-label">Ask my role by voice</span>
+      </button>
+      <h1 class="text-4xl md:text-5xl font-bold text-white drop-shadow-lg mb-2" data-i18n="app_name">Agri AI</h1>
+      <p class="text-white/90 text-lg mb-10 drop-shadow" data-i18n="select_role">Select your role</p>
+      <div class="role-cards-3d grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+        <button type="button" data-role="farmer" class="role-card flex flex-col items-center p-6 rounded-2xl">
+          <span class="text-5xl mb-3 drop-shadow">🌾</span>
+          <span class="font-semibold text-xl text-green-800" data-i18n="farmer">Farmer</span>
+          <span class="text-sm text-stone-500 mt-2">Crop prediction, disease detection, guidance</span>
+        </button>
+        <button type="button" data-role="seller" class="role-card flex flex-col items-center p-6 rounded-2xl">
+          <span class="text-5xl mb-3 drop-shadow">📦</span>
+          <span class="font-semibold text-xl text-amber-800" data-i18n="seller">Seller</span>
+          <span class="text-sm text-stone-500 mt-2">List crops, track quantity, get buyer interest</span>
+        </button>
+        <button type="button" data-role="buyer" class="role-card flex flex-col items-center p-6 rounded-2xl">
+          <span class="text-5xl mb-3 drop-shadow">🛒</span>
+          <span class="font-semibold text-xl text-sky-800" data-i18n="buyer">Buyer</span>
+          <span class="text-sm text-stone-500 mt-2">Find sellers, match by location & quality</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Dashboard (after role selected) -->
+    <section id="dashboard" class="hidden">
+      <header class="flex flex-wrap items-center justify-between gap-4 mb-8 glass-panel rounded-2xl p-4">
+        <div class="flex items-center gap-3">
+          <span id="role-badge" class="px-3 py-1 rounded-full text-sm font-medium"></span>
+          <h2 class="text-2xl font-bold text-green-700" data-i18n="app_name">Agri AI</h2>
+        </div>
+        <div class="flex items-center gap-2">
+          <label class="text-sm text-stone-600" data-i18n="language">Language</label>
+          <select id="lang-select" class="rounded-lg border border-stone-300 px-3 py-2 text-sm">
+            <option value="en">English</option>
+            <option value="hi">हिंदी</option>
+            <option value="ta">தமிழ்</option>
+            <option value="te">తెలుగు</option>
+            <option value="bn">বাংলা</option>
+          </select>
+          <button type="button" id="voice-toggle" class="px-3 py-2 rounded-lg bg-green-600 text-white text-sm font-medium" title="Voice control">🎤 Voice</button>
+          <button type="button" id="back-to-role" class="px-3 py-2 rounded-lg border border-stone-300 text-sm">← Back</button>
+        </div>
+      </header>
+
+      <!-- Farmer panel -->
+      <div id="panel-farmer" class="hidden space-y-8">
+        <div class="grid md:grid-cols-2 gap-6">
+          <div class="glass-panel rounded-2xl p-6 shadow-lg transition hover:shadow-xl" style="transform: translateZ(0);">
+            <h3 class="text-lg font-semibold text-green-700 mb-4" data-i18n="crop_prediction">Crop Prediction</h3>
+            <div class="space-y-3">
+              <div>
+                <label class="block text-sm font-medium text-stone-600 mb-1" data-i18n="soil_color">Soil Color</label>
+                <select id="soil-color" class="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm">
+                  <option value="black" data-i18n="black">Black</option>
+                  <option value="red" data-i18n="red">Red</option>
+                  <option value="brown" data-i18n="brown">Brown</option>
+                  <option value="yellow" data-i18n="yellow">Yellow</option>
+                  <option value="grey" data-i18n="grey">Grey</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-stone-600 mb-1" data-i18n="previous_crop">Previously Grown Crop</label>
+                <input type="text" id="previous-crop" class="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm" placeholder="e.g. wheat" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-stone-600 mb-1" data-i18n="season">Season</label>
+                <select id="season" class="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm">
+                  <option value="kharif" data-i18n="kharif">Kharif</option>
+                  <option value="rabi" data-i18n="rabi">Rabi</option>
+                  <option value="zaid" data-i18n="zaid">Zaid</option>
+                  <option value="monsoon" data-i18n="monsoon">Monsoon</option>
+                  <option value="summer" data-i18n="summer">Summer</option>
+                  <option value="winter" data-i18n="winter">Winter</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-stone-600 mb-1" data-i18n="water_availability">Water Availability</label>
+                <select id="water-availability" class="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm">
+                  <option value="high" data-i18n="high">High</option>
+                  <option value="medium" data-i18n="medium">Medium</option>
+                  <option value="low" data-i18n="low">Low</option>
+                </select>
+              </div>
+              <button type="button" id="btn-predict-crop" class="w-full py-2 rounded-lg bg-green-600 text-white font-medium text-sm" data-i18n="predict">Predict Best Crop</button>
+            </div>
+            <div id="crop-result" class="mt-4 hidden">
+              <p class="text-sm text-stone-600 mb-2"></p>
+              <div id="crop-cards" class="flex flex-wrap gap-2"></div>
+              <div id="crop-sample-img" class="mt-2 rounded-lg overflow-hidden img-placeholder h-24"></div>
+            </div>
+          </div>
+
+          <div class="glass-panel rounded-2xl p-6 shadow-lg transition hover:shadow-xl" style="transform: translateZ(0);">
+            <h3 class="text-lg font-semibold text-green-700 mb-4" data-i18n="fertilizer_recommendation">Fertilizer Recommendation</h3>
+            <div class="space-y-3">
+              <div>
+                <label class="block text-sm font-medium text-stone-600 mb-1">Crop (from prediction or type)</label>
+                <input type="text" id="fertilizer-crop" class="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm" placeholder="e.g. wheat" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-stone-600 mb-1">Disease detected (optional)</label>
+                <input type="text" id="fertilizer-disease" class="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm" placeholder="e.g. leaf spot" />
+              </div>
+              <button type="button" id="btn-fertilizer" class="w-full py-2 rounded-lg bg-amber-500 text-white font-medium text-sm">Get fertilizers</button>
+            </div>
+            <div id="fertilizer-result" class="mt-4 hidden">
+              <ul id="fertilizer-list" class="list-disc list-inside text-sm text-stone-700"></ul>
+              <div id="fert-sample-img" class="mt-2 rounded-lg overflow-hidden img-placeholder h-20"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-panel rounded-2xl p-6 shadow-lg">
+          <h3 class="text-lg font-semibold text-green-700 mb-4" data-i18n="disease_detection">Disease Detection</h3>
+          <p class="text-sm text-stone-600 mb-2" data-i18n="upload_image">Upload plant/leaf image</p>
+          <input type="file" id="disease-image" accept="image/png,image/jpeg,image/jpg" class="block w-full text-sm text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-green-100 file:text-green-700" />
+          <button type="button" id="btn-disease" class="mt-2 py-2 px-4 rounded-lg bg-green-600 text-white text-sm font-medium">Analyze</button>
+          <div id="disease-result" class="mt-4 hidden">
+            <p class="font-medium text-stone-800"></p>
+            <p class="text-sm text-stone-600 mt-1 remedy"></p>
+            <div id="disease-sample-img" class="mt-2 rounded-lg overflow-hidden img-placeholder h-32"></div>
+          </div>
+        </div>
+
+        <div class="glass-panel rounded-2xl p-6 shadow-lg">
+          <h3 class="text-lg font-semibold text-green-700 mb-4" data-i18n="cultivation_guide">Cultivation Guide</h3>
+          <div class="flex gap-2 flex-wrap">
+            <input type="text" id="cultivation-crop" class="rounded-lg border border-stone-300 px-3 py-2 text-sm flex-1 min-w-[120px]" placeholder="e.g. rice" />
+            <button type="button" id="btn-cultivation" class="py-2 px-4 rounded-lg bg-green-600 text-white text-sm font-medium">Get steps</button>
+          </div>
+          <div id="cultivation-result" class="mt-4 hidden">
+            <ol id="cultivation-steps" class="list-decimal list-inside space-y-2 text-sm text-stone-700"></ol>
+            <div id="cult-sample-img" class="mt-2 rounded-lg overflow-hidden img-placeholder h-24"></div>
+          </div>
+        </div>
+
+        <div class="glass-panel rounded-2xl p-6 shadow-lg">
+          <h3 class="text-lg font-semibold text-green-700 mb-4">Complete procedure planning</h3>
+          <p class="text-sm text-stone-600 mb-2">Get full step-by-step procedure for any crop. Use voice to hear steps aloud.</p>
+          <div class="flex gap-2 flex-wrap">
+            <input type="text" id="procedure-crop" class="rounded-lg border border-stone-300 px-3 py-2 text-sm flex-1 min-w-[120px]" placeholder="e.g. rice, wheat" />
+            <button type="button" id="btn-procedure" class="py-2 px-4 rounded-lg bg-green-600 text-white text-sm font-medium">Get full procedure</button>
+            <button type="button" id="btn-voice-read" class="py-2 px-4 rounded-lg bg-green-100 text-green-800 text-sm font-medium" title="Read current steps with voice">🔊 Read aloud</button>
+          </div>
+          <div id="procedure-result" class="mt-4 hidden">
+            <ol id="procedure-steps" class="list-decimal list-inside space-y-2 text-sm text-stone-700"></ol>
+          </div>
+        </div>
+
+        <div class="glass-panel rounded-2xl p-6 shadow-lg">
+          <h3 class="text-lg font-semibold text-green-700 mb-4" data-i18n="survey">Survey</h3>
+          <p class="text-sm text-stone-600 mb-3">Help us improve AI recommendations.</p>
+          <div class="space-y-2">
+            <label class="block text-sm">How satisfied are you with crop suggestions? (1-5)</label>
+            <input type="number" id="survey-q1" min="1" max="5" value="3" class="rounded border px-2 py-1 w-16" />
+            <label class="block text-sm">Would you like more regional language support?</label>
+            <select id="survey-q2" class="rounded border border-stone-300 px-2 py-1 text-sm"><option value="yes">Yes</option><option value="no">No</option></select>
+          </div>
+          <button type="button" id="btn-survey" class="mt-3 py-2 px-4 rounded-lg bg-green-600 text-white text-sm">Submit survey</button>
+        </div>
+      </div>
+
+      <!-- Seller panel -->
+      <div id="panel-seller" class="hidden space-y-8">
+        <div class="glass-panel rounded-2xl p-6 shadow-lg">
+          <h3 class="text-lg font-semibold text-amber-700 mb-4">Seller profile & crop quantity</h3>
+          <div class="space-y-3">
+            <input type="text" id="seller-name" class="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm" placeholder="Your name" />
+            <div class="grid grid-cols-2 gap-2 text-sm">
+              <input type="number" id="seller-lat" class="rounded-lg border border-stone-300 px-3 py-2" placeholder="Latitude" step="any" />
+              <input type="number" id="seller-lon" class="rounded-lg border border-stone-300 px-3 py-2" placeholder="Longitude" step="any" />
+            </div>
+            <div id="seller-crops-list" class="space-y-2">
+              <div class="flex gap-2 flex-wrap items-center">
+                <input type="text" class="crop-name rounded border px-2 py-1 text-sm" placeholder="Crop name" />
+                <input type="number" class="crop-qty rounded border px-2 py-1 text-sm w-20" placeholder="Qty" />
+                <input type="number" class="crop-price rounded border px-2 py-1 text-sm w-24" placeholder="Price/unit" />
+                <input type="number" class="crop-quality rounded border px-2 py-1 text-sm w-20" placeholder="Quality 1-10" min="1" max="10" />
+              </div>
+            </div>
+            <button type="button" id="btn-add-crop" class="text-sm text-green-600 font-medium">+ Add crop</button>
+            <button type="button" id="btn-save-seller" class="block w-full py-2 rounded-lg bg-amber-500 text-white font-medium text-sm">Save profile</button>
+          </div>
+        </div>
+        <div class="glass-panel rounded-2xl p-6 shadow-lg">
+          <h3 class="text-lg font-semibold text-amber-700 mb-4">Buyer interest & notifications</h3>
+          <button type="button" id="btn-refresh-notifications" class="py-2 px-4 rounded-lg bg-amber-100 text-amber-800 text-sm font-medium mb-4">Refresh</button>
+          <div id="notifications-list" class="space-y-2 text-sm"></div>
+        </div>
+      </div>
+
+      <!-- Buyer panel -->
+      <div id="panel-buyer" class="hidden space-y-8">
+        <div class="glass-panel rounded-2xl p-6 shadow-lg">
+          <h3 class="text-lg font-semibold text-sky-700 mb-4" data-i18n="buyer_seller_match">Buyer-Seller Match</h3>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-1">Crop wanted</label>
+              <input type="text" id="match-crop" class="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm" placeholder="e.g. wheat" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Max budget (₹)</label>
+              <input type="number" id="match-budget" class="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm" placeholder="10000" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Your location (lat, lon)</label>
+              <div class="flex gap-2">
+                <input type="number" id="match-lat" class="flex-1 rounded-lg border border-stone-300 px-3 py-2 text-sm" placeholder="Lat" step="any" />
+                <input type="number" id="match-lon" class="flex-1 rounded-lg border border-stone-300 px-3 py-2 text-sm" placeholder="Lon" step="any" />
+              </div>
+            </div>
+          </div>
+          <button type="button" id="btn-match" class="mt-3 py-2 px-4 rounded-lg bg-sky-600 text-white text-sm font-medium">Find matches</button>
+          <div id="match-result" class="mt-4 hidden space-y-2"></div>
+        </div>
+        <div class="glass-panel rounded-2xl p-6 shadow-lg">
+          <h3 class="text-lg font-semibold text-sky-700 mb-4" data-i18n="delivery_tracking">Delivery Tracking</h3>
+          <p class="text-xs text-stone-500 mb-1">Try demo ID: <strong>DEMO001</strong>. Create new: enter Origin & Destination below and click Create.</p>
+          <div class="grid grid-cols-2 gap-2 my-2 text-sm">
+            <input type="text" id="delivery-origin" class="rounded border px-2 py-1" placeholder="Origin" />
+            <input type="text" id="delivery-dest" class="rounded border px-2 py-1" placeholder="Destination" />
+          </div>
+          <button type="button" id="btn-create-delivery" class="mb-2 py-1 px-3 rounded bg-sky-100 text-sky-800 text-sm font-medium">Create delivery</button>
+          <p class="text-xs text-stone-500 mb-1">Then track with the ID returned, or try demo ID: <strong>DEMO001</strong></p>
+          <div class="flex gap-2">
+            <input type="text" id="tracking-id" class="rounded-lg border border-stone-300 px-3 py-2 text-sm flex-1" placeholder="e.g. DEMO001" />
+            <button type="button" id="btn-track" class="py-2 px-4 rounded-lg bg-sky-600 text-white text-sm font-medium">Track</button>
+          </div>
+          <div id="delivery-result" class="mt-4 hidden">
+            <p class="font-medium text-stone-800 status"></p>
+            <ul class="stages mt-2 space-y-1 text-sm"></ul>
+            <div id="delivery-sample-img" class="mt-2 rounded-lg overflow-hidden img-placeholder h-20"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Voice control hint (all roles) -->
+      <div id="voice-panel" class="hidden fixed bottom-4 right-4 bg-green-700 text-white rounded-xl p-4 shadow-lg max-w-xs">
+        <p class="text-sm font-medium">🎤 Voice control active</p>
+        <p class="text-xs mt-1">Say "next", "back", "crop prediction", "fertilizer", "guide", "language".</p>
+        <p id="voice-status" class="text-xs mt-2 opacity-80">Listening...</p>
+      </div>
+    </section>
+  </div>
+
+  <!-- Chatbot - right bottom (visible when role selected) -->
+  <div id="chatbot-panel" class="chatbot-panel hidden">
+    <div class="chatbot-header flex justify-between items-center">
+      <div class="flex items-center gap-2">
+        <span>🤖</span>
+        <span id="chatbot-title">Agri AI Assistant</span>
+      </div>
+      <button type="button" id="chatbot-close" class="text-white/90 hover:text-white text-lg leading-none px-1" title="Close">×</button>
+    </div>
+    <div id="chatbot-messages" class="chatbot-messages"></div>
+    <div class="chatbot-input-wrap">
+      <input type="text" id="chatbot-input" placeholder="Ask anything..." autocomplete="off" />
+      <button type="button" id="chatbot-send" class="px-3 py-2 rounded-lg bg-green-600 text-white text-sm font-medium">Send</button>
+    </div>
+  </div>
+  <button type="button" id="chatbot-toggle" class="chatbot-toggle hidden" title="Open chat">💬</button>
+
+  <!-- Popup for buyer interest (seller view) -->
+  <div id="popup-overlay" class="fixed inset-0 bg-black/40 hidden z-50 flex items-center justify-center p-4">
+    <div id="popup-content" class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6"></div>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
